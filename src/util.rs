@@ -22,3 +22,8 @@ pub fn directory_validate(dir: &str, create: bool) {
         println!("Found directory.")
     }
 }
+
+pub fn magic_padding(pos: u64) -> u64 {
+    println!("{}", pos);
+    return (2048 * (pos as f64 / 2048.0).ceil() as u64) - pos;
+}

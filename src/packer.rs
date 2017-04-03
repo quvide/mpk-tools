@@ -5,6 +5,8 @@ use std::io::SeekFrom;
 // This namespace has the relevant structs and encoding/decoding functions
 use mpk;
 
+use util::magic_padding;
+
 pub fn pack(source_dir_path: &str, out_file_path: &str) {
     println!("Packer started!");
 
@@ -32,7 +34,8 @@ pub fn pack(source_dir_path: &str, out_file_path: &str) {
     out_file.write(&header).expect("Couldn't write to file");
 
     // Skip the known-size file header part for now
-    let mut pos = out_file.seek(SeekFrom::Start((mpk::HEADER_SIZE + mpk::FILEHEADER_SIZE * files.len()) as u64)).unwrap();
+    let header_len: u64 = (mpk::HEADER_SIZE + mpk::FILEHEADER_SIZE * files.len()) as u64;
+    let mut pos = out_file.seek(SeekFrom::Start((header_len + magic_padding(header_len)))).unwrap();
 
     // Initialize FileHeader vector
     let mut file_headers: Vec<mpk::FileHeader> = Vec::new();
@@ -58,6 +61,11 @@ pub fn pack(source_dir_path: &str, out_file_path: &str) {
             // Write all that we previously read to the buffer
             pos += out_file.write(&buf[..n]).expect("Couldn't write bytes, panicking!") as u64;
         }
+
+        // pad to the nearest 2048
+        let padding_vec = vec![0; magic_padding(pos) as usize];
+        out_file.write_all(&padding_vec).expect("Couldn't write padding bytes, panicking!");
+        pos += padding_vec.len() as u64;
 
         // Remove index from file name and pad with 0
         let mut file_path = [0; 228];
