@@ -11,7 +11,7 @@ use clap::{App, SubCommand};
 
 fn main() {
     let matches = App::new("mpk-tools")
-            .version("0.1.0")
+            .version("1.0.0")
             .author("Elias B. <elias.benkhodja@gmail.com>")
             .about("Unpack mpk archives")
             .subcommand(SubCommand::with_name("unpack")

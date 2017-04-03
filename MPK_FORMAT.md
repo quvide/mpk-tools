@@ -1,4 +1,4 @@
-Values are little-endian. Raw data seems to have some kind of alignment. Haven't checked it yet but it's probably needed for valid repacking.
+Values are little-endian. The raw file blocks are always padded to the nearest multiple of 2048. Not sure if it's really required though.
 
 ```
 68 bytes HEADER
