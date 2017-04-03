@@ -5,16 +5,18 @@ use std::io::SeekFrom;
 // This namespace has the relevant structs and encoding/decoding functions
 use mpk;
 
-pub fn unpack(source_file: &mut File, out_dir: &str) {
+pub fn unpack(source_file_path: &str, out_dir_path: &str) {
     println!("Unpacker started!");
 
-    let mut buf: Vec<u8> = Vec::new();
+    println!("Opening file {}.", source_file_path);
+    let mut source_file = File::open(source_file_path).expect("Couldn't open file :/");
 
     // Read the mpk file header to memory
     // It tells us how many "sub"file headers we should expect
-    source_file.take(mpk::HEADER_SIZE).read_to_end(&mut buf)
+    let mut header = [0; mpk::HEADER_SIZE];
+    source_file.read_exact(&mut header)
             .expect("Couldn't read bytes, panicking!");
-    let header = mpk::Header::decode(&buf);
+    let header = mpk::Header::decode(&header);
 
     println!("Archive contains {} files.", header.file_count);
 
@@ -22,8 +24,8 @@ pub fn unpack(source_file: &mut File, out_dir: &str) {
 
     // Read all "sub"file headers to memory
     for _ in 0..header.file_count {
-        buf.clear();
-        source_file.take(mpk::FILEHEADER_SIZE).read_to_end(&mut buf)
+        let mut buf = [0; mpk::FILEHEADER_SIZE];
+        source_file.read_exact(&mut buf)
                 .expect("Couldn't read bytes, panicking!");
 
         files.push(mpk::FileHeader::decode(&buf));
@@ -39,7 +41,7 @@ pub fn unpack(source_file: &mut File, out_dir: &str) {
         let mut file_path = file.file_path.to_vec();
         let mut first_null: usize = 0;
         for (idx, el) in file_path.iter().enumerate() {
-            if *el == 0x0 {
+            if *el == 0 {
                 first_null = idx;
                 break
             }
@@ -48,7 +50,7 @@ pub fn unpack(source_file: &mut File, out_dir: &str) {
 
         // Get file handle to output file
         let mut out_file = File::create(
-                format!("{}/{}_{}", out_dir, file.file_index,
+                format!("{}/{}_{}", out_dir_path, file.file_index,
                 String::from_utf8(file_path)
                         .expect("File path was not valid UTF-8. Panicking!")))
                 .expect("Couldn't create output file. Panicking!");
@@ -57,8 +59,8 @@ pub fn unpack(source_file: &mut File, out_dir: &str) {
         source_file.seek(SeekFrom::Start(file.begin_index))
                 .expect("Invalid resource start address!");
 
-        // Select `length` bytes forward from te cursor
-        let mut source_file = source_file.take(file.length);
+        // Select `length` bytes forward from the cursor
+        let mut source_file = (&source_file).take(file.length);
 
         // Read and write the selected bytes
         loop {
@@ -76,5 +78,4 @@ pub fn unpack(source_file: &mut File, out_dir: &str) {
             out_file.write(&buf[..n]).expect("Couldn't write bytes, panicking!");
         }
     }
-
 }
