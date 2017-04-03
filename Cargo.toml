@@ -1,0 +1,8 @@
+[package]
+name = "mpk-tools"
+version = "0.1.0"
+authors = ["Elias Benkhodja <elias.benkhodja@gmail.com>"]
+
+[dependencies]
+clap = "~2.19.0"
+byteorder = "1.0.0"
