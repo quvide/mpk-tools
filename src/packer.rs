@@ -47,6 +47,11 @@ pub fn pack(source_dir_path: &str, out_file_path: &str) {
         let mut file = File::open(file_path).expect("Couldn't open file for reading.");
         let begin_index = pos;
 
+        // pad to the nearest 2048
+        let padding_vec = vec![0; magic_padding(pos) as usize];
+        out_file.write_all(&padding_vec).expect("Couldn't write padding bytes, panicking!");
+        pos += padding_vec.len() as u64;
+
         loop {
             let mut buf = [0 as u8; 1024*1024];
 
@@ -61,11 +66,6 @@ pub fn pack(source_dir_path: &str, out_file_path: &str) {
             // Write all that we previously read to the buffer
             pos += out_file.write(&buf[..n]).expect("Couldn't write bytes, panicking!") as u64;
         }
-
-        // pad to the nearest 2048
-        let padding_vec = vec![0; magic_padding(pos) as usize];
-        out_file.write_all(&padding_vec).expect("Couldn't write padding bytes, panicking!");
-        pos += padding_vec.len() as u64;
 
         // Remove index from file name and pad with 0
         let mut file_path = [0; 228];
